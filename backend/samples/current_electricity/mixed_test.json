@@ -1,0 +1,122 @@
+{
+  "problem": {
+    "text": "A 12 V battery is connected to a 2 ohm resistor in series with a parallel combination of 6 ohm and 3 ohm resistors. Find the total current and current through each resistor.",
+    "asked_quantity": "current"
+  },
+  "circuit": {
+    "type": "mixed",
+    "components": [
+      {
+        "id": "B1",
+        "type": "battery",
+        "value": 12,
+        "unit": "V",
+        "terminals": ["1", "2"],
+        "polarity": {
+          "terminal_1": "+",
+          "terminal_2": "-"
+        }
+      },
+      {
+        "id": "R1",
+        "type": "resistor",
+        "value": 2,
+        "unit": "ohm",
+        "terminals": ["1", "2"]
+      },
+      {
+        "id": "R2",
+        "type": "resistor",
+        "value": 6,
+        "unit": "ohm",
+        "terminals": ["1", "2"]
+      },
+      {
+        "id": "R3",
+        "type": "resistor",
+        "value": 3,
+        "unit": "ohm",
+        "terminals": ["1", "2"]
+      }
+    ],
+    "connections": [
+      {
+        "from": {
+          "component": "B1",
+          "terminal": "1"
+        },
+        "to": {
+          "component": "R1",
+          "terminal": "1"
+        }
+      },
+      {
+        "from": {
+          "component": "R1",
+          "terminal": "2"
+        },
+        "to": {
+          "component": "R2",
+          "terminal": "1"
+        }
+      },
+      {
+        "from": {
+          "component": "R1",
+          "terminal": "2"
+        },
+        "to": {
+          "component": "R3",
+          "terminal": "1"
+        }
+      },
+      {
+        "from": {
+          "component": "R2",
+          "terminal": "2"
+        },
+        "to": {
+          "component": "B1",
+          "terminal": "2"
+        }
+      },
+      {
+        "from": {
+          "component": "R3",
+          "terminal": "2"
+        },
+        "to": {
+          "component": "B1",
+          "terminal": "2"
+        }
+      }
+    ]
+  },
+  "given_values": [
+    {
+      "quantity": "voltage",
+      "value": 12,
+      "unit": "V"
+    },
+    {
+      "quantity": "resistance",
+      "value": 2,
+      "unit": "ohm"
+    },
+    {
+      "quantity": "resistance",
+      "value": 6,
+      "unit": "ohm"
+    },
+    {
+      "quantity": "resistance",
+      "value": 3,
+      "unit": "ohm"
+    }
+  ],
+  "unknowns": [
+    {
+      "quantity": "current"
+    }
+  ]
+}
