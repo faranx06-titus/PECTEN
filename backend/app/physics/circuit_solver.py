@@ -1,5 +1,5 @@
-class CircuitSolver:
 
+class CircuitSolver:
     def __init__(self, graph):
         self.graph = graph
 

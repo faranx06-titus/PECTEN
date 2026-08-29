@@ -42,3 +42,22 @@ export async function getDemoCircuit() {
 
   return response.json();
 }
+export async function analyzeCircuit(file) {
+  const formData = new FormData();
+
+  formData.append("file", file);
+
+  const response = await fetch(
+    `${API_URL}/analyze-circuit`,
+    {
+      method: "POST",
+      body: formData,
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Circuit analysis failed");
+  }
+
+  return response.json();
+}

@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from app.api.routes import router
 
 from app.ai.vision import test_gemini
 from app.physics.graph_builder import build_circuit_graph
@@ -28,7 +29,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+app.include_router(router)
 
 @app.get("/")
 def root():

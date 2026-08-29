@@ -431,32 +431,23 @@ style={wireStyle}
       {/* RESULTS */}
       {/* ========================= */}
 
-      <div style={{ marginTop: "20px" }}>
-        <h3>Component Results</h3>
+       <div style={{ marginTop: "20px" }}>
+  <h3>Component Results</h3>
 
-        {circuit.components.map((component) => (
-          <div key={component.id}>
-            <strong>{component.id}</strong>{" "}
-            {circuit.components.map((component) => {
-          const result =
-            simulation?.components?.[component.id];
+  {circuit.components.map((component) => {
+    const result = simulation?.components?.[component.id];
 
-  return (
-    <div key={component.id}>
-      <strong>{component.id}</strong>{" "}
-      | I = {result?.current?.toFixed(2) || "—"} A{" "}
-      | V = {result?.voltage?.toFixed(2) || "—"} V{" "}
-      | P = {result?.power?.toFixed(2) || "—"} W
-    </div>
-     
-  
-     
-  );
-})}
-             
-          </div>
-        ))}
+    return (
+      <div key={component.id}>
+        <strong>{component.id}</strong>{" "}
+        | I = {result?.current?.toFixed(2) || "—"} A{" "}
+        | V = {result?.voltage?.toFixed(2) || "—"} V{" "}
+        | P = {result?.power?.toFixed(2) || "—"} W
       </div>
+    );
+  })}
+</div>
+     
       <div
   style={{
     marginTop: "30px",

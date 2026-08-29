@@ -1,3 +1,4 @@
+import json
 import os
 
 from dotenv import load_dotenv
@@ -28,10 +29,15 @@ def test_gemini():
 
     return response.text
 
+
 def analyze_circuit(image_path: str):
+
     image = Image.open(image_path)
 
-    prompt = """
+    # Get the actual image dimensions so Gemini knows the coordinate system.
+    image_width, image_height = image.size
+
+    prompt = f"""
 You are PECTEN's circuit-vision system.
 
 Your job is to convert a Class 12 Current Electricity problem
@@ -45,62 +51,94 @@ IMPORTANT:
 - If a value is not given, use null.
 - Do not invent components or values.
 - Return ONLY valid JSON.
-- No markdown.
-- No ```json fences.
+
+IMAGE COORDINATE SYSTEM:
+- Image width: {image_width} pixels
+- Image height: {image_height} pixels
+- Origin (0,0) is the TOP-LEFT corner.
+- x increases from LEFT to RIGHT.
+- y increases from TOP to BOTTOM.
+- All visual coordinates MUST be in the original image's pixel coordinate system.
+- Do NOT use normalized coordinates.
+- Do NOT use percentages.
 
 Return exactly this structure:
 
-{
-  "problem": {
+{{
+  "problem": {{
     "text": "",
     "asked_quantity": null
-  },
+  }},
 
-  "circuit": {
+  "circuit": {{
     "type": "series | parallel | mixed | single_loop | unknown",
 
     "components": [
-      {
+      {{
         "id": "B1",
         "type": "battery | resistor | switch | ammeter | voltmeter | wire | cell | rheostat | potentiometer | other",
         "value": null,
         "unit": null,
+
         "terminals": ["1", "2"],
-        "polarity": {
+
+        "polarity": {{
           "terminal_1": null,
           "terminal_2": null
-        }
-      }
+        }},
+
+        "visual": {{
+          "bbox": [x1, y1, x2, y2],
+          "center": [x, y]
+        }}
+      }}
     ],
 
     "connections": [
-      {
-        "from": {
+      {{
+        "from": {{
           "component": "B1",
           "terminal": "1"
-        },
-        "to": {
+        }},
+        "to": {{
           "component": "R1",
           "terminal": "1"
-        }
-      }
+        }}
+      }}
     ]
-  },
+  }},
+
+  "visual": {{
+    "image_width": {image_width},
+    "image_height": {image_height},
+
+    "wire_paths": [
+      {{
+        "from_component": "B1",
+        "to_component": "R1",
+        "points": [
+          [x1, y1],
+          [x2, y2],
+          [x3, y3]
+        ]
+      }}
+    ]
+  }},
 
   "given_values": [
-    {
+    {{
       "quantity": "",
       "value": null,
       "unit": ""
-    }
+    }}
   ],
 
   "unknowns": [
-    {
+    {{
       "quantity": ""
-    }
+    }}
   ]
-}
+}}
 
 TERMINAL RULES:
 - Every two-terminal component must have terminals "1" and "2".
@@ -108,6 +146,26 @@ TERMINAL RULES:
   when visible.
 - Connections must reference component IDs and terminal numbers.
 - Do not describe connections using natural-language sentences.
+
+VISUAL COMPONENT RULES:
+- bbox means [left, top, right, bottom].
+- center means the approximate center of the component.
+- Coordinates must refer to the ORIGINAL uploaded image.
+- Estimate coordinates from the visible diagram.
+- Do not use coordinates outside the image.
+- Include visual data for every visible circuit component.
+- The bounding box should tightly surround the actual component symbol,
+  not its text label.
+
+WIRE PATH RULES:
+- Trace visible circuit wires.
+- Represent each wire as an ordered list of [x,y] points.
+- Use enough points to represent corners and direction changes.
+- Points must follow the actual visible wire.
+- Do NOT create a theoretical circuit layout.
+- Do NOT invent wires that are not visible.
+- If the wire geometry cannot be reliably determined, return an empty
+  wire_paths array rather than guessing.
 
 VALUE RULES:
 - Store only numerical values explicitly visible/stated.
@@ -117,7 +175,7 @@ VALUE RULES:
   2 A -> value: 2, unit: "A"
 
 QUESTION RULES:
-- Extract what the problem asks for.
+- Extract what the problem asks.
 - Examples:
   "find current" -> "current"
   "find voltage across R1" -> "voltage"
@@ -132,10 +190,14 @@ The PECTEN physics engine will perform the calculations.
         model="gemini-3.6-flash",
         contents=[image, prompt],
         config=types.GenerateContentConfig(
+            response_mime_type="application/json",
             automatic_function_calling=types.AutomaticFunctionCallingConfig(
                 disable=True
             )
         )
     )
 
-    return response.text
+    return json.loads(response.text)
+
+
+ 

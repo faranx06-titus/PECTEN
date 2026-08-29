@@ -3,11 +3,16 @@ import {
   checkBackend,
   getDemoCircuit,
 } from "./services/api";
+
 import CircuitSimulator from "./components/CircuitSimulator";
+import AnalyzedCircuitSimulator from "./components/AnalyzedCircuitSimulator";
+import UploadQuestion from "./components/UploadQuestion";
 
 function App() {
   const [status, setStatus] = useState("");
   const [circuit, setCircuit] = useState(null);
+  const [analysis, setAnalysis] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState(null);
 
   const testBackend = async () => {
     try {
@@ -28,59 +33,161 @@ function App() {
     }
   };
 
+  const handleAnalysisComplete = (result, uploadedFile) => {
+  console.log("Analysis received:", result);
+  console.log("Original image:", uploadedFile);
+
+  setAnalysis(result);
+
+  if (uploadedFile) {
+    const imageUrl = URL.createObjectURL(uploadedFile);
+    console.log("Image URL:", imageUrl);
+    setUploadedImage(imageUrl);
+  }
+};
+
   return (
     <div>
       <h1>PECTEN</h1>
       <p>Life to Textbooks.</p>
 
+      {/* Backend test */}
       <button onClick={testBackend}>
         Test Backend
       </button>
 
       <p>{status}</p>
 
-      <button onClick={loadCircuit}>
-        Load Demo Circuit
-      </button>
+      {/* NEW: Upload Question */}
+      <UploadQuestion
+        onAnalysisComplete={handleAnalysisComplete}
+      />
+      {uploadedImage && (
+  <div style={{ marginTop: "20px" }}>
+    <h3>Original Uploaded Image</h3>
 
-      {circuit && (
-        <div>
-          <h2>Circuit</h2>
+    <img
+      src={uploadedImage}
+      alt="Uploaded circuit"
+      style={{
+        maxWidth: "700px",
+        width: "100%",
+        display: "block",
+        border: "2px solid black",
+      }}
+    />
+  </div>
+)}
+
+      {/* Show AI analysis */}
+      {analysis && (
+        <div style={{ marginTop: "30px" }}>
+          <h2>PECTEN Analysis</h2>
+
+          <h3>Problem</h3>
 
           <p>
-            Battery: {circuit.battery.voltage}
-            {circuit.battery.unit}
+            {analysis.vision?.problem?.text}
           </p>
 
-          {circuit.components.map((component) => (
-            <div key={component.id}>
-              <h3>
-                {component.type}: {component.id}
-              </h3>
+          <p>
+            Asked quantity:{" "}
+            <strong>
+              {analysis.vision?.problem?.asked_quantity}
+            </strong>
+          </p>
 
+          <h3>Circuit</h3>
+
+          <p>
+            Type:{" "}
+            <strong>
+              {analysis.vision?.circuit?.type}
+            </strong>
+          </p>
+
+          <h3>Components</h3>
+
+          {analysis.vision?.circuit?.components?.map(
+            (component) => (
+              <div key={component.id}>
+                <strong>{component.id}</strong>{" "}
+                — {component.type}{" "}
+                {component.value !== null &&
+                  `(${component.value} ${component.unit})`}
+              </div>
+            )
+          )}
+
+          <h3>Solution</h3>
+
+          {analysis.solution && (
+            <div>
               <p>
-                Resistance: {component.resistance} Ω
+                Equivalent Resistance:{" "}
+                {analysis.solution.equivalent_resistance} Ω
               </p>
 
               <p>
-                Current: {component.current} A
-              </p>
-
-              <p>
-                Voltage: {component.voltage} V
-              </p>
-
-              <p>
-                Power: {component.power} W
+                Total Current:{" "}
+                {analysis.solution.total_current} A
               </p>
             </div>
-            
-          ))}
-          <CircuitSimulator circuit={circuit} />
+          )}
         </div>
       )}
+      {analysis && uploadedImage && (
+  <AnalyzedCircuitSimulator
+    analysis={analysis}
+    imageUrl={uploadedImage}
+  />
+)}
+                
+           
+      {/* Existing demo circuit */}
+      <div style={{ marginTop: "40px" }}>
+        <button onClick={loadCircuit}>
+          Load Demo Circuit
+        </button>
+
+        {circuit && (
+          <div>
+            <h2>Demo Circuit</h2>
+
+            <p>
+              Battery: {circuit.battery.voltage}
+              {circuit.battery.unit}
+            </p>
+
+            {circuit.components.map((component) => (
+              <div key={component.id}>
+                <h3>
+                  {component.type}: {component.id}
+                </h3>
+
+                <p>
+                  Resistance: {component.resistance} Ω
+                </p>
+
+                <p>
+                  Current: {component.current} A
+                </p>
+
+                <p>
+                  Voltage: {component.voltage} V
+                </p>
+
+                <p>
+                  Power: {component.power} W
+                </p>
+              </div>
+            ))}
+
+            <CircuitSimulator circuit={circuit} />
+          </div>
+        )}
+      </div>
     </div>
-    
   );
 }
 
