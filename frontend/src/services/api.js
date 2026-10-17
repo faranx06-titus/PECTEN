@@ -1,4 +1,6 @@
-const API_URL = "https://pecten.onrender.com";
+//const API_URL = "https://pecten.onrender.com";
+const API_URL = "http://127.0.0.1:8000";
+
 export async function checkBackend() {
   const response = await fetch(`${API_URL}/health`);
 
@@ -9,7 +11,7 @@ export async function checkBackend() {
   return response.json();
 }
 
-export async function simulateCircuit(r1Resistance) {
+export async function simulateCircuit(circuitData) {
   const response = await fetch(
     `${API_URL}/simulate-circuit`,
     {
@@ -18,7 +20,7 @@ export async function simulateCircuit(r1Resistance) {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        r1_resistance: r1Resistance,
+        circuit: circuitData,
       }),
     }
   );

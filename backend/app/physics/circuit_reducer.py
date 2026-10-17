@@ -8,14 +8,14 @@ class CircuitReducer:
         self.graph = graph
         self.reduction_history = []
     def find_parallel_groups(self):
-        """Find resistor components connected between the same two nodes."""
+        """Find resistive components connected between the same two nodes."""
 
         groups = {}
 
         for component in self.graph.components.values():
 
-            # Only resistors can be reduced together.
-            if component["type"] != "resistor":
+            # Both resistors and bulbs are resistive elements
+            if component["type"] not in ["resistor", "bulb"]:
                 continue
 
             node_pair = frozenset(
@@ -45,9 +45,9 @@ class CircuitReducer:
                 component_id
             )
 
-            if component["type"] != "resistor":
+            if component["type"] not in ["resistor", "bulb"]:
                 raise ValueError(
-                    "Only resistors are supported."
+                    "Only resistive elements (resistors, bulbs) are supported."
                 )
 
             resistance = component["value"]
@@ -174,8 +174,8 @@ class CircuitReducer:
             second = self.graph.get_component(second_id)
 
             if (
-                first["type"] == "resistor"
-                and second["type"] == "resistor"
+                first["type"] in ["resistor", "bulb"]
+                and second["type"] in ["resistor", "bulb"]
             ):
                 groups.append(
                     [first_id, second_id]
@@ -197,9 +197,9 @@ class CircuitReducer:
                 component_id
             )
 
-            if component["type"] != "resistor":
+            if component["type"] not in ["resistor", "bulb"]:
                 raise ValueError(
-                    "Only resistors are supported."
+                    "Only resistive elements (resistors, bulbs) are supported."
                 )
 
             total += component["value"]

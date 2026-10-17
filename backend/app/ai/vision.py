@@ -1,9 +1,11 @@
 import json
 import os
+import time
 
 from dotenv import load_dotenv
 from google import genai
 from google.genai import types
+from google.genai.errors import ServerError, ClientError
 from PIL import Image
 
 load_dotenv()
@@ -15,19 +17,29 @@ if not api_key:
 
 client = genai.Client(api_key=api_key)
 
+# List of models to try in order of preference
+# We start with the latest, then fallback to stable versions
+FALLBACK_MODELS = [
+    "gemini-3.8-flash",
+    "gemini-1.5-flash",
+    "gemini-1.5-pro"
+]
 
 def test_gemini():
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents="Say hello to PECTEN in one short sentence.",
-        config=types.GenerateContentConfig(
-            automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                disable=True
+    # Use the first available model for a simple test
+    try:
+        response = client.models.generate_content(
+            model=FALLBACK_MODELS[0],
+            contents="Say hello to PECTEN in one short sentence.",
+            config=types.GenerateContentConfig(
+                automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                    disable=True
+                )
             )
         )
-    )
-
-    return response.text
+        return response.text
+    except Exception as e:
+        return f"Test failed: {str(e)}"
 
 
 def analyze_circuit(image_path: str):
@@ -186,18 +198,41 @@ You are ONLY creating the representation.
 The PECTEN physics engine will perform the calculations.
 """
 
-    response = client.models.generate_content(
-        model="gemini-3.6-flash",
-        contents=[image, prompt],
-        config=types.GenerateContentConfig(
-            response_mime_type="application/json",
-            automatic_function_calling=types.AutomaticFunctionCallingConfig(
-                disable=True
-            )
-        )
-    )
+    last_exception = None
 
-    return json.loads(response.text)
+    # Fallback Loop: Try models one by one if we hit a 503 (High Demand)
+    for model_name in FALLBACK_MODELS:
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=[image, prompt],
+                config=types.GenerateContentConfig(
+                    response_mime_type="application/json",
+                    automatic_function_calling=types.AutomaticFunctionCallingConfig(
+                        disable=True
+                    )
+                )
+            )
+            return json.loads(response.text)
+
+        except ServerError as e:
+            # 503 is the "High Demand" error. If we see this, try the next model.
+            if e.status_code == 503:
+                last_exception = e
+                continue
+            # For other server errors, fail immediately
+            raise e
+        except ClientError as e:
+            # 403 Permission Denied or 400 Bad Request should fail immediately
+            raise e
+        except Exception as e:
+            raise e
+
+    # If we tried all models and all returned 503
+    raise RuntimeError(
+        f"All Gemini models are currently experiencing high demand. "
+        f"Last error: {str(last_exception)}"
+    )
 
 
  

@@ -7,13 +7,15 @@ import {
 import CircuitSimulator from "./components/CircuitSimulator";
 import AnalyzedCircuitSimulator from "./components/AnalyzedCircuitSimulator";
 import UploadQuestion from "./components/UploadQuestion";
+import GeneratedCircuit from "./components/GeneratedCircuit";
+import AnalysisToggle from "./components/AnalysisToggle";
 
 function App() {
   const [status, setStatus] = useState("");
   const [circuit, setCircuit] = useState(null);
   const [analysis, setAnalysis] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
-
+  const [mode, setMode] = useState("original");
   const testBackend = async () => {
     try {
       const data = await checkBackend();
@@ -136,11 +138,21 @@ function App() {
           )}
         </div>
       )}
-      {analysis && uploadedImage && (
-  <AnalyzedCircuitSimulator
-    analysis={analysis}
-    imageUrl={uploadedImage}
-  />
+      {analysis && (
+  <div style={{ marginTop: "30px" }}>
+    <AnalysisToggle mode={mode} setMode={setMode} />
+
+    {mode === "original" && uploadedImage && (
+      <AnalyzedCircuitSimulator
+        analysis={analysis}
+        imageUrl={uploadedImage}
+      />
+    )}
+
+    {mode === "generated" && (
+      <GeneratedCircuit analysis={analysis} />
+    )}
+  </div>
 )}
                 
            

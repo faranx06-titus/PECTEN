@@ -45,19 +45,21 @@ async def analyze_circuit_endpoint(
                             )
 
         
-        return {
-            "vision": result,
-            "graph": {
-                "nodes": graph.nodes,
-                "components": graph.components
-            },
-            "reduction_history": reducer.reduction_history,
-            "solution": solution,
-            "component_results": component_results
+         
+         # Merge component results into solution
+        solution["components"] = component_results
 
-          
+        return {
+    "vision": result,
+    "graph": {
+        "nodes": graph.nodes,
+        "components": graph.components
+    },
+    "reduction_history": reducer.reduction_history,
+    "solution": solution
+} 
             
-        }
+        
 
     finally:
         os.remove(temp_path)

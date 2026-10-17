@@ -79,10 +79,17 @@ const animationDuration =
     ? Math.max(0.15, 1 / totalCurrent)
     : 0;
 
-const wireStyle = {
+const forwardWire = {
   animation:
     totalCurrent > 0
       ? `currentFlow ${animationDuration}s linear infinite`
+      : "none",
+};
+
+const reverseWire = {
+  animation:
+    totalCurrent > 0
+      ? `currentFlowReverse ${animationDuration}s linear infinite`
       : "none",
 };
 
@@ -156,6 +163,10 @@ const wireStyle = {
           stroke-dashoffset: -40;
         }
       }
+      @keyframes currentFlowReverse {
+  from { stroke-dashoffset: 0; }
+  to   { stroke-dashoffset: 40; }
+}
     `}
   </style>
 </defs>
@@ -174,7 +185,7 @@ const wireStyle = {
   stroke="black"
   strokeWidth="4"
   strokeDasharray="10 10"
-  style={wireStyle}
+  style={forwardWire}
 />
 
         {/* R1 → parallel junction */}
@@ -186,7 +197,7 @@ const wireStyle = {
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-          style={wireStyle}
+          style={forwardWire}
         />
 
         {/* Top branch */}
@@ -198,7 +209,7 @@ const wireStyle = {
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+          style={forwardWire}
         />
 
         <line
@@ -209,7 +220,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+          style={forwardWire}
         />
 
         <line
@@ -220,7 +231,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+style={forwardWire}
         />
 
         <line
@@ -231,7 +242,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+style={forwardWire}
         />
 
         {/* Bottom branch */}
@@ -243,7 +254,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+style={reverseWire}
         />
 
         <line
@@ -254,7 +265,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+style={reverseWire}
         />
 
         <line
@@ -265,7 +276,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+style={reverseWire}
         />
 
         {/* Return wire */}
@@ -277,7 +288,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+style={reverseWire}
         />
 
         <line
@@ -288,7 +299,7 @@ style={wireStyle}
           stroke="black"
           strokeWidth="4"
           strokeDasharray="10 10"
-style={wireStyle}
+style={reverseWire}
         />
 
         {/* ========================= */}
