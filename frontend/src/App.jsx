@@ -16,6 +16,7 @@ function App() {
   const [analysis, setAnalysis] = useState(null);
   const [uploadedImage, setUploadedImage] = useState(null);
   const [mode, setMode] = useState("original");
+
   const testBackend = async () => {
     try {
       const data = await checkBackend();
@@ -36,169 +37,149 @@ function App() {
   };
 
   const handleAnalysisComplete = (result, uploadedFile) => {
-  console.log("Analysis received:", result);
-  console.log("Original image:", uploadedFile);
+    setAnalysis(result);
 
-  setAnalysis(result);
-
-  if (uploadedFile) {
-    const imageUrl = URL.createObjectURL(uploadedFile);
-    console.log("Image URL:", imageUrl);
-    setUploadedImage(imageUrl);
-  }
-};
+    if (uploadedFile) {
+      const imageUrl = URL.createObjectURL(uploadedFile);
+      setUploadedImage(imageUrl);
+    }
+  };
 
   return (
-    <div>
-      <h1>PECTEN</h1>
-      <p>Life to Textbooks.</p>
+    <div className="app-wrapper">
+      <header className="header-section">
+        <div className="brand-container">
+          <span className="brand-logo">PECTEN</span>
+          <span className="brand-tagline">Life to Textbooks.</span>
+        </div>
+        <div className="header-actions">
+          <button className="btn-primary" onClick={testBackend}>
+            Verify System
+          </button>
+          {status && <span className="status-badge">{status}</span>}
+        </div>
+      </header>
 
-      {/* Backend test */}
-      <button onClick={testBackend}>
-        Test Backend
-      </button>
+      <main className="dashboard-container">
+        {/* Left Panel: Inputs */}
+        <aside className="glass-panel">
+          <h2>Input Center</h2>
+          <p>Upload a circuit diagram to begin the reasoning process.</p>
 
-      <p>{status}</p>
+          <div className="panel-content">
+            <UploadQuestion onAnalysisComplete={handleAnalysisComplete} />
 
-      {/* NEW: Upload Question */}
-      <UploadQuestion
-        onAnalysisComplete={handleAnalysisComplete}
-      />
-      {uploadedImage && (
-  <div style={{ marginTop: "20px" }}>
-    <h3>Original Uploaded Image</h3>
+            <div className="demo-section" style={{ marginTop: '40px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
+              <h3>Fast Start</h3>
+              <p>Test the engine with a pre-made circuit.</p>
+              <button className="btn-primary" onClick={loadCircuit} style={{ width: '100%' }}>
+                Load Demo Circuit
+              </button>
+            </div>
+          </div>
+        </aside>
 
-    <img
-      src={uploadedImage}
-      alt="Uploaded circuit"
-      style={{
-        maxWidth: "700px",
-        width: "100%",
-        display: "block",
-        border: "2px solid black",
-      }}
-    />
-  </div>
-)}
-
-      {/* Show AI analysis */}
-      {analysis && (
-        <div style={{ marginTop: "30px" }}>
-          <h2>PECTEN Analysis</h2>
-
-          <h3>Problem</h3>
-
-          <p>
-            {analysis.vision?.problem?.text}
-          </p>
-
-          <p>
-            Asked quantity:{" "}
-            <strong>
-              {analysis.vision?.problem?.asked_quantity}
-            </strong>
-          </p>
-
-          <h3>Circuit</h3>
-
-          <p>
-            Type:{" "}
-            <strong>
-              {analysis.vision?.circuit?.type}
-            </strong>
-          </p>
-
-          <h3>Components</h3>
-
-          {analysis.vision?.circuit?.components?.map(
-            (component) => (
-              <div key={component.id}>
-                <strong>{component.id}</strong>{" "}
-                — {component.type}{" "}
-                {component.value !== null &&
-                  `(${component.value} ${component.unit})`}
-              </div>
-            )
-          )}
-
-          <h3>Solution</h3>
-
-          {analysis.solution && (
-            <div>
-              <p>
-                Equivalent Resistance:{" "}
-                {analysis.solution.equivalent_resistance} Ω
-              </p>
-
-              <p>
-                Total Current:{" "}
-                {analysis.solution.total_current} A
-              </p>
+        {/* Center Panel: Visualizer */}
+        <section className="glass-panel center-stage">
+          {uploadedImage && !analysis && (
+            <div className="image-preview-container">
+              <h3>Uploaded Diagram</h3>
+              <img src={uploadedImage} alt="Uploaded circuit" className="full-width-img" />
             </div>
           )}
-        </div>
-      )}
-      {analysis && (
-  <div style={{ marginTop: "30px" }}>
-    <AnalysisToggle mode={mode} setMode={setMode} />
 
-    {mode === "original" && uploadedImage && (
-      <AnalyzedCircuitSimulator
-        analysis={analysis}
-        imageUrl={uploadedImage}
-      />
-    )}
-
-    {mode === "generated" && (
-      <GeneratedCircuit analysis={analysis} />
-    )}
-  </div>
-)}
-                
-           
-      {/* Existing demo circuit */}
-      <div style={{ marginTop: "40px" }}>
-        <button onClick={loadCircuit}>
-          Load Demo Circuit
-        </button>
-
-        {circuit && (
-          <div>
-            <h2>Demo Circuit</h2>
-
-            <p>
-              Battery: {circuit.battery.voltage}
-              {circuit.battery.unit}
-            </p>
-
-            {circuit.components.map((component) => (
-              <div key={component.id}>
-                <h3>
-                  {component.type}: {component.id}
-                </h3>
-
-                <p>
-                  Resistance: {component.resistance} Ω
-                </p>
-
-                <p>
-                  Current: {component.current} A
-                </p>
-
-                <p>
-                  Voltage: {component.voltage} V
-                </p>
-
-                <p>
-                  Power: {component.power} W
-                </p>
+          {analysis && (
+            <div className="simulation-wrapper">
+              <AnalysisToggle mode={mode} setMode={setMode} />
+              <div className="canvas-container">
+                {mode === "original" && uploadedImage && (
+                  <AnalyzedCircuitSimulator
+                    analysis={analysis}
+                    imageUrl={uploadedImage}
+                  />
+                )}
+                {mode === "generated" && (
+                  <GeneratedCircuit analysis={analysis} />
+                )}
               </div>
-            ))}
+            </div>
+          )}
 
-            <CircuitSimulator circuit={circuit} />
-          </div>
-        )}
-      </div>
+          {circuit && (
+            <div className="demo-simulation">
+              <h2>Demo Simulation</h2>
+              <CircuitSimulator circuit={circuit} />
+            </div>
+          )}
+
+          {!analysis && !circuit && (
+            <div className="empty-state">
+              <div className="empty-icon">⚡</div>
+              <h3>No Circuit Loaded</h3>
+              <p>Upload an image or load a demo to see the physics engine in action.</p>
+            </div>
+          )}
+        </section>
+
+        {/* Right Panel: Insights */}
+        <aside className="glass-panel">
+          <h2>Reasoning Engine</h2>
+
+          {!analysis ? (
+            <div className="placeholder-text">
+              Waiting for analysis...
+            </div>
+          ) : (
+            <div className="analysis-results">
+              <div className="result-group">
+                <div className="result-label">Problem Statement</div>
+                <p className="problem-text">{analysis.vision?.problem?.text}</p>
+              </div>
+
+              <div className="result-group">
+                <div className="result-label">Target Quantity</div>
+                <div className="result-value">{analysis.vision?.problem?.asked_quantity || "Not specified"}</div>
+              </div>
+
+              <div className="result-group">
+                <div className="result-label">Circuit Topology</div>
+                <div className="result-value">{analysis.vision?.circuit?.type}</div>
+              </div>
+
+              <div className="result-group">
+                <div className="result-label">Components Identified</div>
+                <div className="component-list">
+                  {analysis.vision?.circuit?.components?.map((comp) => (
+                    <div key={comp.id} className="result-card">
+                      <div className="card-header">
+                        <strong>{comp.id}</strong>
+                        <span className="comp-type">{comp.type}</span>
+                      </div>
+                      <div className="card-value">
+                        {comp.value !== null ? `${comp.value} ${comp.unit}` : "Value not found"}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {analysis.solution && (
+                <div className="solution-summary">
+                  <div className="result-label">Final Results</div>
+                  <div className="result-card highlight">
+                    <div className="result-label">Eq. Resistance</div>
+                    <div className="result-value">{analysis.solution.equivalent_resistance} Ω</div>
+                  </div>
+                  <div className="result-card highlight">
+                    <div className="result-label">Total Current</div>
+                    <div className="result-value">{analysis.solution.total_current} A</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </aside>
+      </main>
     </div>
   );
 }
