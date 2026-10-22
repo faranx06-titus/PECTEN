@@ -1,0 +1,72 @@
+{
+  "id": "parallel_2",
+  "circuit": {
+    "type": "parallel_2",
+    "components": [
+      {
+        "id": "B1",
+        "type": "battery",
+        "value": 9,
+        "terminals": [
+          "1",
+          "2"
+        ]
+      },
+      {
+        "id": "R1",
+        "type": "resistor",
+        "value": 100,
+        "terminals": [
+          "1",
+          "2"
+        ]
+      },
+      {
+        "id": "R2",
+        "type": "resistor",
+        "value": 220,
+        "terminals": [
+          "1",
+          "2"
+        ]
+      }
+    ],
+    "connections": [],
+    "nodes": [
+      {
+        "id": "N1",
+        "terminals": [
+          {
+            "component": "B1",
+            "terminal": "1"
+          },
+          {
+            "component": "R1",
+            "terminal": "1"
+          },
+          {
+            "component": "R2",
+            "terminal": "1"
+          }
+        ]
+      },
+      {
+        "id": "N2",
+        "terminals": [
+          {
+            "component": "B1",
+            "terminal": "2"
+          },
+          {
+            "component": "R1",
+            "terminal": "2"
+          },
+          {
+            "component": "R2",
+            "terminal": "2"
+          }
+        ]
+      }
+    ]
+  }
+}

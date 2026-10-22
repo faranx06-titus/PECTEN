@@ -34,7 +34,7 @@ class SolutionTracer:
 
             for component_id, component in self.graph.components.items():
 
-                if component["type"] != "resistor":
+                if component["type"] not in ["resistor", "bulb"]:
                     continue
 
                 resistance = component["value"]

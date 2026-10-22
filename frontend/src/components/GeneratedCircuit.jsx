@@ -1,7 +1,5 @@
-import React from "react";
-
-function GeneratedCircuitAI({ analysis }) {
-  const solution = analysis?.solution || {};
+function GeneratedCircuitAI({ analysis, simulation }) {
+  const solution = simulation || analysis?.solution || {};
   const circuit = analysis?.vision?.circuit || {};
   const visual = analysis?.vision?.visual || {};
 
@@ -13,8 +11,29 @@ function GeneratedCircuitAI({ analysis }) {
   const voltage = Number(solution.voltage || 0);
   const power = Number(solution.power || voltage * current || 0);
 
-  const battery = components.find(c => c.type === "battery");
-  const resistors = components.filter(c => c.type === "resistor");
+  const battery = components.find(c => c.type === "battery" || c.type === "cell");
+  const resistors = components.filter(c => c.type === "resistor" || c.type === "bulb");
+  const bulbs = components.filter(c => c.type === "bulb");
+  const branchCurrents = wires.map((_, index) => {
+    const exact = solution.wire_currents?.[index];
+    if (exact?.resolved) return { exact: exact.current, magnitude: Math.abs(exact.current) };
+    return { exact: null, magnitude: 0 };
+  });
+  const branchColors = ["#527a95", "#a98a4f", "#a8674c", "#647d68", "#806d87", "#9a6658"];
+  const branchColorById = new Map(resistors.map((component, index) => [component.id, branchColors[index % branchColors.length]]));
+  const colorForWire = (wire, index) => {
+    const branchId = [wire.from_component, wire.to_component].find((id) => branchColorById.has(id));
+    return branchId ? branchColorById.get(branchId) : branchColors[index % branchColors.length];
+  };
+  const dashFlow = (value) => {
+    // Solved amperes drive this visual cue; it is not a literal drift-speed model.
+    const amperes = Math.max(0, Number(value) || 0);
+    const fraction = Math.min(1, Math.log1p(amperes / 0.05) / Math.log1p(20));
+    const dashLength = 3 + fraction * 3;
+    const gapLength = 20 - fraction * 9;
+    return { dashArray: `${dashLength} ${gapLength}`, dashOffset: -(dashLength + gapLength),
+      strokeWidth: 2.5 + fraction * 1.8, duration: 1.8 - fraction * 1.25 };
+  };
 
   const makePath = (points = []) =>
     points
@@ -29,23 +48,33 @@ function GeneratedCircuitAI({ analysis }) {
         viewBox={`0 0 ${visual.image_width || 700} ${visual.image_height || 400}`}
         style={{
           width: "100%",
-          maxWidth: 700,
-          border: "1px solid #ccc",
-          background: "#fff"
+          maxWidth: "100%",
+          border: "1px solid #deddd7",
+          borderRadius: 8,
+          background: "#fffefa"
         }}
       >
+        <defs>
+          <filter id="generatedBulbGlow" x="-150%" y="-150%" width="400%" height="400%"><feGaussianBlur stdDeviation="10" result="blur" /><feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge></filter>
+        </defs>
         {/* AI Wire Paths */}
-        {wires.map((wire, index) => (
-          <path
-            key={index}
-            d={makePath(wire.points)}
-            fill="none"
-            stroke="#222"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        ))}
+        {wires.map((wire, index) => {
+          const flow = branchCurrents[index] || { exact: null, magnitude: 0 };
+          const color = flow.exact === null ? "#94a3b8" : colorForWire(wire, index);
+          const flowStyle = dashFlow(flow.magnitude);
+          const pathPoints = flow.exact < 0 ? [...wire.points].reverse() : wire.points;
+          return <g key={index}>
+            <path d={makePath(wire.points)} fill="none" stroke={color} strokeWidth={flow.exact === null ? 3 : flowStyle.strokeWidth + 3}
+              strokeLinecap="round" strokeLinejoin="round" opacity={flow.exact === null ? 0.24 : 0.22} />
+            {flow.exact !== null && flow.magnitude > 0 && <>
+              <path d={makePath(pathPoints)} fill="none" stroke={color} strokeWidth={flowStyle.strokeWidth} strokeLinecap="round"
+                strokeDasharray={flowStyle.dashArray} opacity=".98">
+                <animate attributeName="stroke-dashoffset" from="0" to={flowStyle.dashOffset}
+                  dur={`${flowStyle.duration}s`} repeatCount="indefinite" />
+              </path>
+            </>}
+          </g>;
+        })}
 
         {/* Battery */}
         {battery?.visual?.bbox && (() => {
@@ -96,16 +125,10 @@ function GeneratedCircuitAI({ analysis }) {
 
           return (
             <g key={r.id}>
-              <rect
-                x={x1}
-                y={y1}
-                width={x2 - x1}
-                height={y2 - y1}
-                rx="4"
-                fill="white"
-                stroke="black"
-                strokeWidth="2"
-              />
+              {r.type === "bulb" ? <>
+                <circle cx={cx} cy={cy} r={Math.max(x2 - x1, y2 - y1) * 0.65} fill="#facc15" opacity={Number(result?.power) > 1e-12 ? 0.12 + Math.min(1, Math.log1p(Math.max(0, Number(result?.power) || 0)) / Math.log1p(5)) * 0.38 : 0} filter="url(#generatedBulbGlow)" />
+                <circle cx={cx} cy={cy} r={Math.max(10, Math.min(x2 - x1, y2 - y1) / 2)} fill={Number(result?.power) > 1e-12 ? "#fff7ae" : "#d3d3ce"} stroke="#9b8b62" strokeWidth="3" />
+              </> : <rect x={x1} y={y1} width={x2 - x1} height={y2 - y1} rx="4" fill="white" stroke="#1e293b" strokeWidth="2" />}
 
               <text
                 x={cx}
@@ -140,15 +163,6 @@ function GeneratedCircuitAI({ analysis }) {
         })}
 
         {/* Animated Current */}
-        {wires[0]?.points && (
-          <circle r="6" fill="red">
-            <animateMotion
-              dur={current > 0 ? `${Math.max(0.8, 3 / current)}s` : "2s"}
-              repeatCount="indefinite"
-              path={makePath(wires[0].points)}
-            />
-          </circle>
-        )}
       </svg>
 
       <div style={{ marginTop: 20 }}>
@@ -185,6 +199,14 @@ function GeneratedCircuitAI({ analysis }) {
             </div>
           );
         })}
+      </div>
+
+      <div style={{ marginTop: 25 }}>
+        <h3>Bulbs detected ({bulbs.length})</h3>
+        {bulbs.length ? bulbs.map((bulb) => {
+          const result = solution.components?.[bulb.id] || {};
+          return <p key={bulb.id}>💡 <strong>{bulb.id}</strong> — {bulb.value ?? "Unknown"} Ω · {Number(result.current || 0).toFixed(3)} A · {Number(result.power || 0).toFixed(2)} W</p>;
+        }) : <p>No bulbs were identified in this circuit.</p>}
       </div>
     </div>
   );

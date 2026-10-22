@@ -1,0 +1,89 @@
+{
+  "id": "series_2",
+  "circuit": {
+    "type": "series_2",
+    "components": [
+      {
+        "id": "B1",
+        "type": "battery",
+        "value": 9,
+        "terminals": [
+          "1",
+          "2"
+        ],
+        "visual": {
+          "terminal_points": {
+            "1": [
+              90,
+              90
+            ],
+            "2": [
+              90,
+              290
+            ]
+          }
+        }
+      },
+      {
+        "id": "R1",
+        "type": "resistor",
+        "value": 100,
+        "terminals": [
+          "1",
+          "2"
+        ]
+      },
+      {
+        "id": "R2",
+        "type": "resistor",
+        "value": 200,
+        "terminals": [
+          "1",
+          "2"
+        ]
+      }
+    ],
+    "connections": [],
+    "nodes": [
+      {
+        "id": "N1",
+        "terminals": [
+          {
+            "component": "B1",
+            "terminal": "1"
+          },
+          {
+            "component": "R1",
+            "terminal": "1"
+          }
+        ]
+      },
+      {
+        "id": "N2",
+        "terminals": [
+          {
+            "component": "R1",
+            "terminal": "2"
+          },
+          {
+            "component": "R2",
+            "terminal": "1"
+          }
+        ]
+      },
+      {
+        "id": "N3",
+        "terminals": [
+          {
+            "component": "R2",
+            "terminal": "2"
+          },
+          {
+            "component": "B1",
+            "terminal": "2"
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -9,6 +9,7 @@ class CircuitGraph:
     def __init__(self):
         self.nodes = {}
         self.components = {}
+        self.terminal_nodes = {}
 
     def add_node(self, node_id):
         """Add an electrical node."""

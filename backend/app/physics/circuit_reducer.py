@@ -329,11 +329,6 @@ class CircuitReducer:
 
                 group = parallel_groups[0]
 
-                print(
-                    f"Reducing parallel group: "
-                    f"{' || '.join(group)}"
-                )
-
                 self.reduce_parallel_group(group)
 
                 reduction_count += 1
@@ -350,11 +345,6 @@ class CircuitReducer:
 
                 group = series_groups[0]
 
-                print(
-                    f"Reducing series group: "
-                    f"{' + '.join(group)}"
-                )
-
                 self.reduce_series_group(group)
 
                 reduction_count += 1
@@ -363,11 +353,6 @@ class CircuitReducer:
 
             # Nothing left to reduce
             break
-
-        print(
-            f"\nTotal reductions performed: "
-            f"{reduction_count}"
-        )
 
         return reduction_count
 

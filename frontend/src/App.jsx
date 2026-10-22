@@ -1,185 +1,157 @@
-import { useState } from "react";
-import {
-  checkBackend,
-  getDemoCircuit,
-} from "./services/api";
-
-import CircuitSimulator from "./components/CircuitSimulator";
+import { useEffect, useState } from "react";
 import AnalyzedCircuitSimulator from "./components/AnalyzedCircuitSimulator";
 import UploadQuestion from "./components/UploadQuestion";
 import GeneratedCircuit from "./components/GeneratedCircuit";
 import AnalysisToggle from "./components/AnalysisToggle";
+import SettingsPanel from "./components/SettingsPanel";
+import SimulationErrorBoundary from "./components/SimulationErrorBoundary";
+
+const API_KEY_STORAGE = "pecten.geminiApiKey";
+
+function getSavedApiKey() {
+  try { return window.sessionStorage.getItem(API_KEY_STORAGE) || ""; }
+  catch { return ""; }
+}
 
 function App() {
-  const [status, setStatus] = useState("");
-  const [circuit, setCircuit] = useState(null);
   const [analysis, setAnalysis] = useState(null);
-  const [uploadedImage, setUploadedImage] = useState(null);
+  const [simulationResult, setSimulationResult] = useState(null);
+  const [uploadedImage, setUploadedImage] = useState("");
+  const [sourcePageImage, setSourcePageImage] = useState("");
+  const [sourcePageError, setSourcePageError] = useState(false);
+  const [documentInfo, setDocumentInfo] = useState(null);
   const [mode, setMode] = useState("original");
+  const [topologyReviewed, setTopologyReviewed] = useState(false);
+  const [apiKey, setApiKey] = useState(getSavedApiKey);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const testBackend = async () => {
-    try {
-      const data = await checkBackend();
-      setStatus(data.status);
-    } catch (error) {
-      setStatus("Backend connection failed");
-    }
-  };
+  useEffect(() => () => {
+    if (uploadedImage.startsWith("blob:")) URL.revokeObjectURL(uploadedImage);
+  }, [uploadedImage]);
 
-  const loadCircuit = async () => {
-    try {
-      const data = await getDemoCircuit();
-      setCircuit(data);
-    } catch (error) {
-      console.error(error);
-      setStatus("Circuit loading failed");
-    }
-  };
+  useEffect(() => () => {
+    if (sourcePageImage.startsWith("blob:")) URL.revokeObjectURL(sourcePageImage);
+  }, [sourcePageImage]);
 
-  const handleAnalysisComplete = (result, uploadedFile) => {
+  const handleAnalysisComplete = (result, pageImage, sourcePage, info) => {
     setAnalysis(result);
-
-    if (uploadedFile) {
-      const imageUrl = URL.createObjectURL(uploadedFile);
-      setUploadedImage(imageUrl);
-    }
+    setSimulationResult(result.solution ?? null);
+    setTopologyReviewed(false);
+    setMode("original");
+    setUploadedImage(URL.createObjectURL(pageImage));
+    setSourcePageImage(URL.createObjectURL(sourcePage));
+    setSourcePageError(false);
+    setDocumentInfo(info);
   };
+
+  const startOver = () => {
+    setAnalysis(null);
+    setSimulationResult(null);
+    setUploadedImage("");
+    setSourcePageImage("");
+    setDocumentInfo(null);
+    setTopologyReviewed(false);
+  };
+
+  const saveApiKey = (key) => {
+    setApiKey(key);
+    try { window.sessionStorage.setItem(API_KEY_STORAGE, key); } catch { /* Keep the key in memory for this page. */ }
+  };
+
+  const clearApiKey = () => {
+    setApiKey("");
+    try { window.sessionStorage.removeItem(API_KEY_STORAGE); } catch { /* The in-memory key is still cleared. */ }
+  };
+
+  const hasMultipleSources = (analysis?.vision?.circuit?.components ?? [])
+    .filter((component) => ["battery", "cell"].includes(component.type)).length > 1;
 
   return (
-    <div className="app-wrapper">
-      <header className="header-section">
-        <div className="brand-container">
-          <span className="brand-logo">PECTEN</span>
-          <span className="brand-tagline">Life to Textbooks.</span>
-        </div>
+    <div className="app-shell">
+      <header className="site-header">
+        <a className="wordmark" href="#home" onClick={(event) => { event.preventDefault(); startOver(); }} aria-label="PECTEN home">PECTEN</a>
+        <span className="header-description">A clearer way to explore physics</span>
         <div className="header-actions">
-          <button className="btn-primary" onClick={testBackend}>
-            Verify System
-          </button>
-          {status && <span className="status-badge">{status}</span>}
+          {analysis && <button type="button" className="quiet-button" onClick={startOver}>New question</button>}
+          <button type="button" className="quiet-button" onClick={() => setSettingsOpen(true)}>Settings</button>
         </div>
       </header>
 
-      <main className="dashboard-container">
-        {/* Left Panel: Inputs */}
-        <aside className="glass-panel">
-          <h2>Input Center</h2>
-          <p>Upload a circuit diagram to begin the reasoning process.</p>
-
-          <div className="panel-content">
-            <UploadQuestion onAnalysisComplete={handleAnalysisComplete} />
-
-            <div className="demo-section" style={{ marginTop: '40px', borderTop: '1px solid var(--border-color)', paddingTop: '20px' }}>
-              <h3>Fast Start</h3>
-              <p>Test the engine with a pre-made circuit.</p>
-              <button className="btn-primary" onClick={loadCircuit} style={{ width: '100%' }}>
-                Load Demo Circuit
-              </button>
+      {!analysis ? (
+        <main className="home-page">
+          <UploadQuestion onAnalysisComplete={handleAnalysisComplete} apiKey={apiKey} onOpenSettings={() => setSettingsOpen(true)} />
+          <section className="how-it-works" aria-label="How PECTEN works">
+            <article><span>01</span><div><strong>Choose a page</strong><p>Upload a worksheet, textbook PDF, or circuit image.</p></div></article>
+            <article><span>02</span><div><strong>Ask your question</strong><p>Paste the problem or let PECTEN read it from the page.</p></div></article>
+            <article><span>03</span><div><strong>Explore the physics</strong><p>Review the circuit, check its connections, and change values.</p></div></article>
+          </section>
+          <p className="home-footnote">Circuit support: series, parallel, mixed, and bridge networks with batteries/cells and known resistor or bulb values.</p>
+        </main>
+      ) : (
+        <main className="workspace-page">
+          <div className="workspace-titlebar">
+            <div>
+              <p className="section-kicker">YOUR PHYSICS WORKSPACE</p>
+              <h1>{documentInfo?.fileName || "Circuit analysis"}{documentInfo?.pageNumber ? <span> · Page {documentInfo.pageNumber}</span> : null}</h1>
+              {documentInfo?.question && <p className="workspace-question">“{documentInfo.question}”</p>}
             </div>
+            <button type="button" className="quiet-button" onClick={startOver}>Choose another page</button>
           </div>
-        </aside>
 
-        {/* Center Panel: Visualizer */}
-        <section className="glass-panel center-stage">
-          {uploadedImage && !analysis && (
-            <div className="image-preview-container">
-              <h3>Uploaded Diagram</h3>
-              <img src={uploadedImage} alt="Uploaded circuit" className="full-width-img" />
-            </div>
-          )}
-
-          {analysis && (
-            <div className="simulation-wrapper">
-              <AnalysisToggle mode={mode} setMode={setMode} />
-              <div className="canvas-container">
-                {mode === "original" && uploadedImage && (
-                  <AnalyzedCircuitSimulator
-                    analysis={analysis}
-                    imageUrl={uploadedImage}
-                  />
-                )}
-                {mode === "generated" && (
-                  <GeneratedCircuit analysis={analysis} />
-                )}
+          <div className="workspace-grid">
+            <section className="document-panel">
+              <div className="panel-heading"><div><p className="section-kicker">SOURCE PAGE</p><h2>Original question</h2></div></div>
+              <div className="document-page-frame">
+                <div className="document-page-visual">
+                  <img src={sourcePageImage} alt="Selected page from the uploaded document" onError={() => setSourcePageError(true)} />
+                  {sourcePageError && <p className="image-error-message" role="alert">The analysis succeeded, but this browser could not display the original page image.</p>}
+                  {documentInfo?.cropRect && <div className="document-crop-marker" style={{
+                    left: `${documentInfo.cropRect.x * 100}%`, top: `${documentInfo.cropRect.y * 100}%`,
+                    width: `${documentInfo.cropRect.width * 100}%`, height: `${documentInfo.cropRect.height * 100}%`,
+                  }} />}
+                </div>
               </div>
-            </div>
-          )}
-
-          {circuit && (
-            <div className="demo-simulation">
-              <h2>Demo Simulation</h2>
-              <CircuitSimulator circuit={circuit} />
-            </div>
-          )}
-
-          {!analysis && !circuit && (
-            <div className="empty-state">
-              <div className="empty-icon">⚡</div>
-              <h3>No Circuit Loaded</h3>
-              <p>Upload an image or load a demo to see the physics engine in action.</p>
-            </div>
-          )}
-        </section>
-
-        {/* Right Panel: Insights */}
-        <aside className="glass-panel">
-          <h2>Reasoning Engine</h2>
-
-          {!analysis ? (
-            <div className="placeholder-text">
-              Waiting for analysis...
-            </div>
-          ) : (
-            <div className="analysis-results">
-              <div className="result-group">
-                <div className="result-label">Problem Statement</div>
-                <p className="problem-text">{analysis.vision?.problem?.text}</p>
+              <div className="question-readback">
+                <span>Question PECTEN is working on</span>
+                <p>{analysis.vision?.problem?.text || documentInfo?.question || "No question text was detected. Check the circuit and values before starting."}</p>
               </div>
+            </section>
 
-              <div className="result-group">
-                <div className="result-label">Target Quantity</div>
-                <div className="result-value">{analysis.vision?.problem?.asked_quantity || "Not specified"}</div>
+            <section className="simulation-panel">
+              <div className="simulation-panel-heading">
+                <div><p className="section-kicker">CIRCUIT MODEL</p><h2>Reasoning and simulation</h2></div>
+                <AnalysisToggle mode={mode} setMode={setMode} generatedDisabled={!topologyReviewed || hasMultipleSources}
+                  generatedDisabledReason={hasMultipleSources ? "The generated model view shows one source; use the original diagram overlay for multi-source circuits." : undefined} />
               </div>
-
-              <div className="result-group">
-                <div className="result-label">Circuit Topology</div>
-                <div className="result-value">{analysis.vision?.circuit?.type}</div>
-              </div>
-
-              <div className="result-group">
-                <div className="result-label">Components Identified</div>
-                <div className="component-list">
-                  {analysis.vision?.circuit?.components?.map((comp) => (
-                    <div key={comp.id} className="result-card">
-                      <div className="card-header">
-                        <strong>{comp.id}</strong>
-                        <span className="comp-type">{comp.type}</span>
-                      </div>
-                      <div className="card-value">
-                        {comp.value !== null ? `${comp.value} ${comp.unit}` : "Value not found"}
-                      </div>
-                    </div>
+              <SimulationErrorBoundary key={`${uploadedImage}-${mode}`} onReset={startOver}>
+                {mode === "original" && <AnalyzedCircuitSimulator
+                  analysis={analysis}
+                  imageUrl={uploadedImage}
+                  onSimulationChange={setSimulationResult}
+                  topologyReviewed={topologyReviewed}
+                  onTopologyReviewedChange={setTopologyReviewed}
+                />}
+                {mode === "generated" && <GeneratedCircuit analysis={analysis} simulation={simulationResult} />}
+              </SimulationErrorBoundary>
+              {analysis.simulation_error && <div className="review-callout" role="status">
+                <strong>The first circuit reading needs a check.</strong>
+                <p>{analysis.simulation_error} Review the highlighted component values and connections before starting the simulation.</p>
+              </div>}
+              <section className="identified-components">
+                <p className="section-kicker">READ FROM THE PAGE</p>
+                <h3>Detected components</h3>
+                <div className="component-chips">
+                  {(analysis.vision?.circuit?.components || []).map((component) => (
+                    <span key={component.id}><b>{component.id}</b> {component.type}{component.value != null ? ` · ${component.value} ${component.unit || ""}` : " · value not found"}</span>
                   ))}
                 </div>
-              </div>
+              </section>
+            </section>
+          </div>
+        </main>
+      )}
 
-              {analysis.solution && (
-                <div className="solution-summary">
-                  <div className="result-label">Final Results</div>
-                  <div className="result-card highlight">
-                    <div className="result-label">Eq. Resistance</div>
-                    <div className="result-value">{analysis.solution.equivalent_resistance} Ω</div>
-                  </div>
-                  <div className="result-card highlight">
-                    <div className="result-label">Total Current</div>
-                    <div className="result-value">{analysis.solution.total_current} A</div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </aside>
-      </main>
+      {settingsOpen && <SettingsPanel open onClose={() => setSettingsOpen(false)} hasSavedKey={Boolean(apiKey)} onSave={saveApiKey} onClear={clearApiKey} />}
     </div>
   );
 }

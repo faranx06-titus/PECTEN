@@ -1,16 +1,10 @@
-# React + Vite
+# PECTEN frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 and Vite client for the PECTEN circuit-analysis prototype. It handles PDF page rendering/cropping, uploads, topology review, editable circuit values, source-page and analyzed-image views, current-flow overlays, and solved component readings. Solving is performed by the FastAPI backend; Gemini is only used for image interpretation. From this directory:
 
-Currently, two official plugins are available:
+```sh
+npm install
+npm run dev
+```
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
-
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+The app expects the FastAPI backend at `http://127.0.0.1:8000`. Set `VITE_API_URL` in `.env.local` to point it elsewhere. A user's optional Gemini key is held in tab-scoped `sessionStorage` and sent only with image-analysis requests. The flow animation is an illustrative encoding of solved current; bulb glow is a qualitative response to solved power. For supported circuit types, physics boundaries, and backend setup, see the [root README](../README.md) and [architecture](../docs/architecture.md).

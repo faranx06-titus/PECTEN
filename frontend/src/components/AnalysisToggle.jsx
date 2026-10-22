@@ -1,34 +1,26 @@
-function AnalysisToggle({ mode, setMode }) {
+function AnalysisToggle({ mode, setMode, generatedDisabled = false, generatedDisabledReason }) {
   return (
-    <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
+    <div className="analysis-toggle" role="tablist" aria-label="Circuit view">
       <button
+        type="button"
+        role="tab"
+        aria-selected={mode === "original"}
         onClick={() => setMode("original")}
-        style={{
-          padding: "10px 18px",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-          background: mode === "original" ? "#2563eb" : "#e5e7eb",
-          color: mode === "original" ? "#fff" : "#000",
-          fontWeight: "600",
-        }}
+        className={mode === "original" ? "is-active" : ""}
       >
-        Original Analysis
+        Diagram overlay
       </button>
 
       <button
+        type="button"
+        role="tab"
+        aria-selected={mode === "generated"}
         onClick={() => setMode("generated")}
-        style={{
-          padding: "10px 18px",
-          border: "none",
-          borderRadius: "8px",
-          cursor: "pointer",
-          background: mode === "generated" ? "#16a34a" : "#e5e7eb",
-          color: mode === "generated" ? "#fff" : "#000",
-          fontWeight: "600",
-        }}
+        disabled={generatedDisabled}
+        title={generatedDisabled ? (generatedDisabledReason || "Review and confirm the detected topology first") : undefined}
+        className={mode === "generated" ? "is-active" : ""}
       >
-        Generated Analysis
+        Circuit model
       </button>
     </div>
   );
