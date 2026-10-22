@@ -13,6 +13,11 @@ PECTEN is an AI-assisted current-electricity learning prototype. A learner uploa
 
 Supported circuit families are connected series, parallel, mixed series-parallel, and bridge networks with one or more ideal batteries/cells and known resistor/bulb resistances. Identical ideal sources directly in parallel use an explicitly stated equal-current-sharing assumption; unequal real source sharing needs internal resistance and is not modeled. Bulbs remain distinct components but are solved as fixed resistances; filament heating, rated brightness, and transient behavior are not modeled. Glow is a qualitative visualization because lamp ratings are unknown. Dash pace and thickness are visual mappings of solved current, not literal electron drift speeds. Gemini's image reading is a candidate, not proof of correct topology; inspect connections, especially at crossings and junctions. Unknown resistor/bulb values and non-circuit engineering diagrams are unsupported. Image analysis requires a Gemini API key; circuit solving and value edits are local and do not use Gemini calls.
 
+## Media
+
+Google Drive link: https://drive.google.com/file/d/18U7_YiUSq-DwePDpeRKVPyDhlni16_Ts/view?usp=sharing
+
+
 ## Circuit extraction benchmark
 
 Generate the small gold image set with `py backend/tools/circuit_benchmark.py generate backend/tools/benchmark_data`. To score model output, save one JSON object per line in a JSONL file with an `id` from the gold set and a `vision` object, then run `py backend/tools/circuit_benchmark.py score backend/tools/benchmark_data predictions.jsonl`. The report separates component ID/type F1, numeric component-value accuracy (within 1%), and terminal-pair connectivity F1; none of these metrics measures solver accuracy or visual localization.
